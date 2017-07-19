@@ -23,34 +23,21 @@ def naked_twins(values):
     Returns:
         the values dictionary with the naked twins eliminated from peers.
     """
-#    twins = {}
-#
-#    for key, value in values.items():
-#        for peer in peers[key]:
-#            if value == values[peer]:
-#                twins[key] = value
-#
-#    for twin in twins:
-#        for peer in peers[twin]:
-#            if values[peer] != twins[twin]:
-#                assign_value(values, peer, values[peer].replace(twins[twin],''))
-#
-    potential_twins = [box for box in values.keys() if len(values[box]) == 2]
+    possible_twins = [box for box in values.keys() if len(values[box]) == 2]
 
-    naked_twins = [[box1,box2] for box1 in potential_twins \
-                    for box2 in peers[box1] \
-                    if set(values[box1])==set(values[box2]) ]
-    for i in range(len(naked_twins)):
-        box1 = naked_twins[i][0]
-        box2 = naked_twins[i][1]
-        peers1 = set(peers[box1])
-        peers2 = set(peers[box2])
-        peers_int = peers1 & peers2
-        for peer_val in peers_int:
-            if len(values[peer_val])>2:
-                for rm_val in values[box1]:
-                    #values[peer_val] = values[peer_val].replace(rm_val,'')
-                    values = assign_value(values, peer_val, values[peer_val].replace(rm_val,''))
+    naked_twins = []
+
+    for first in possible_twins:
+        for second in peers[first]:
+            if values[first] == values[second]:
+                naked_twins.append([first, second])
+
+    for first, second in naked_twins:
+        combined_peers = peers[first] & peers[second]
+        for peer in combined_peers:
+            if values[peer] != values[first]:
+                for value in values[first]:     #loop because digits can be either there or not and in any order.
+                    values = assign_value(values, peer, values[peer].replace(value, ''))
     return values
 
     # Find all instances of naked twins
@@ -68,18 +55,16 @@ boxes = cross(rows, cols)
 row_units = [cross(r, cols) for r in rows]
 column_units = [cross(rows, c) for c in cols]
 square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
-unitlist = row_units + column_units + square_units
-cols_rev = cols[::-1]
+rcols = cols[::-1]
+left_diagonal_units = [[rows[i]+cols[i] for i in range(len(rows))]]
+right_diagonal_units = [[rows[i]+rcols[i] for i in range(len(rows))]]
+
+#for diagonal add disgonal units also to unit list for each peer.
+unitlist = row_units + column_units + square_units + left_diagonal_units + right_diagonal_units
+
 units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
 peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
-d1_units = [[rows[i]+cols[i] for i in range(len(rows))]]
-d2_units = [[rows[i]+cols_rev[i] for i in range(len(rows))]]
 
-#do_diagonal = 0 # Set this flag = 0 for non-diagonal sudoku
-#if do_diagonal == 1:
-#    unitlist = row_units + column_units + square_units + d1_units + d2_units
-#else:
-#    unitlist = row_units + column_units + square_units
 
 def grid_values(grid):
     """
@@ -162,7 +147,6 @@ def search(values):
     # Now use recursion to solve each one of the resulting sudokus, and if one returns a value (not False), return that answer!
     for value in values[s]:
         new_values = values.copy()
-        #new_values[s] = value
         assign_value(new_values, s, value)
         attempt = search(new_values)
         if attempt:

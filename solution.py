@@ -33,8 +33,8 @@ def naked_twins(values):
                 naked_twins.append([first, second])
 
     for first, second in naked_twins:
-        combined_peers = peers[first] & peers[second]
-        for peer in combined_peers:
+        common_peers = peers[first].intersection(peers[second])
+        for peer in common_peers:
             if values[peer] != values[first]:
                 for value in values[first]:     #loop because digits can be either there or not and in any order.
                     values = assign_value(values, peer, values[peer].replace(value, ''))

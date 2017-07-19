@@ -23,6 +23,35 @@ def naked_twins(values):
     Returns:
         the values dictionary with the naked twins eliminated from peers.
     """
+#    twins = {}
+#
+#    for key, value in values.items():
+#        for peer in peers[key]:
+#            if value == values[peer]:
+#                twins[key] = value
+#
+#    for twin in twins:
+#        for peer in peers[twin]:
+#            if values[peer] != twins[twin]:
+#                assign_value(values, peer, values[peer].replace(twins[twin],''))
+#
+    potential_twins = [box for box in values.keys() if len(values[box]) == 2]
+
+    naked_twins = [[box1,box2] for box1 in potential_twins \
+                    for box2 in peers[box1] \
+                    if set(values[box1])==set(values[box2]) ]
+    for i in range(len(naked_twins)):
+        box1 = naked_twins[i][0]
+        box2 = naked_twins[i][1]
+        peers1 = set(peers[box1])
+        peers2 = set(peers[box2])
+        peers_int = peers1 & peers2
+        for peer_val in peers_int:
+            if len(values[peer_val])>2:
+                for rm_val in values[box1]:
+                    #values[peer_val] = values[peer_val].replace(rm_val,'')
+                    values = assign_value(values, peer_val, values[peer_val].replace(rm_val,''))
+    return values
 
     # Find all instances of naked twins
     # Eliminate the naked twins as possibilities for their peers
@@ -40,8 +69,17 @@ row_units = [cross(r, cols) for r in rows]
 column_units = [cross(rows, c) for c in cols]
 square_units = [cross(rs, cs) for rs in ('ABC','DEF','GHI') for cs in ('123','456','789')]
 unitlist = row_units + column_units + square_units
+cols_rev = cols[::-1]
 units = dict((s, [u for u in unitlist if s in u]) for s in boxes)
 peers = dict((s, set(sum(units[s],[]))-set([s])) for s in boxes)
+d1_units = [[rows[i]+cols[i] for i in range(len(rows))]]
+d2_units = [[rows[i]+cols_rev[i] for i in range(len(rows))]]
+
+#do_diagonal = 0 # Set this flag = 0 for non-diagonal sudoku
+#if do_diagonal == 1:
+#    unitlist = row_units + column_units + square_units + d1_units + d2_units
+#else:
+#    unitlist = row_units + column_units + square_units
 
 def grid_values(grid):
     """
@@ -101,6 +139,7 @@ def reduce_puzzle(values):
         solved_values_before = len([box for box in values.keys() if len(values[box]) == 1])
         values = eliminate(values)
         values = only_choice(values)
+        values = naked_twins(values)
         solved_values_after = len([box for box in values.keys() if len(values[box]) == 1])
         stalled = solved_values_before == solved_values_after
         if len([box for box in values.keys() if len(values[box]) == 0]):
